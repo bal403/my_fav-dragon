@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>faye 🫶</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        body {
+            /* PALITAN MO ITONG background.jpg NG PILI MONG BACKGROUND PIC MO PRE */
+            background: linear-gradient(rgba(254, 246, 240, 0.85), rgba(254, 246, 240, 0.85)), url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* FLOATING BACKGROUND ELEMENTS */
+        .floating-deco {
+            position: absolute;
+            pointer-events: none;
+            font-size: 24px;
+            animation: floatUpDown 3s ease-in-out infinite;
+            z-index: 1;
+            opacity: 0.6;
+        }
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        .book-wrapper {
+            perspective: 1500px;
+            width: 100%;
+            max-width: 950px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* AUDIO STYLING */
+        .music-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #music-ctrl-btn {
+            background: #ffe5ec;
+            color: #2b2b2b;
+            border: 2px solid #2b2b2b;
+            box-shadow: 4px 4px 0px #2b2b2b;
+            padding: 12px 24px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #music-ctrl-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px #2b2b2b;
+            background: #ffb3c1;
+        }
+        #music-ctrl-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #2b2b2b;
+        }
+
+        /* PAGE 1: COVER SCREEN */
+        .cover-page {
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #2b2b2b;
+            box-shadow: 10px 10px 0px #2b2b2b;
+            border-radius: 20px;
+            padding: 40px 25px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            animation: superPop 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .cover-title {
+            margin-bottom: 30px;
+        }
+        .cover-title h1 {
+            font-size: 28px;
+            color: #2b2b2b;
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+        .cover-title span {
+            background: #ffb3c1;
+            padding: 6px 20px;
+            border: 2px solid #2b2b2b;
+            box-shadow: 4px 4px 0px #2b2b2b;
+            display: inline-block;
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 6px;
+        }
+        
+        /* COZY PHOTO ALBUM GRID */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding: 15px;
+            border: 3px dashed #2b2b2b;
+            border-radius: 16px;
+            background: rgba(255, 253, 250, 0.8);
+        }
+        .gallery-item {
+            background: white;
+            padding: 8px 8px 22px 8px;
+            border: 2px solid #2b2b2b;
+            box-shadow: 4px 4px 0px #2b2b2b;
+            transition: all 0.3s ease;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05) rotate(0deg) !important;
+            z-index: 5;
+            box-shadow: 6px 6px 0px #ff6b6b;
+        }
+        .gallery-item:nth-child(3n) { transform: rotate(-3deg); }
+        .gallery-item:nth-child(3n+1) { transform: rotate(4deg); }
+        .gallery-item:nth-child(3n+2) { transform: rotate(-1.5deg); }
+        .gallery-item img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border: 1px solid #e5dcd3;
+            display: block;
+        }
+        .gallery-gif img {
+            object-fit: contain;
+            border: none;
+            max-height: 95px;
+        }
+
+        /* PAGE 2: MAIN SCRAPBOOK CONTAINER */
+        .scrapbook-container {
+            display: none;
+            flex-direction: row;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            border: 4px solid #2b2b2b;
+            box-shadow: 12px 12px 0px #2b2b2b;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        .scrapbook-container.active-page {
+            display: flex;
+            animation: superPop 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+        }
+        .scrapbook-container::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.08) 100%);
+            border-left: 2px dashed #2b2b2b;
+            transform: translateX(-50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+        .page-left {
+            width: 50%;
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #fffdfa;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-right {
+            width: 50%;
+            background: #fffdfa;
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .letter-head h1 {
+            font-size: 26px;
+            color: #2b2b2b;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+        .letter-head span {
+            background: #ffb3c1;
+            padding: 4px 14px;
+            border: 2px solid #2b2b2b;
+            box-shadow: 3px 3px 0px #2b2b2b;
+            display: inline-block;
+            margin-top: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        .quiz-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* SMOOTH SLIDE-IN TRANSITIONS FOR STEPS */
+        .step {
+            display: none;
+            opacity: 0;
+        }
+        .step.active {
+            display: block;
+            animation: cuteSlide 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .step h2 {
+            font-size: 16px;
+            color: #ff6b6b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+        .step label {
+            display: block;
+            font-size: 15px;
+            font-weight: bold;
+            color: #2b2b2b;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        /* TEXT BOXES */
+        .custom-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #2b2b2b;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fffdfa;
+            color: #2b2b2b;
+            outline: none;
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.05);
+            transition: all 0.25s ease;
+            -webkit-appearance: none;
+        }
+        .custom-field:focus {
+            background: #ffffff;
+            border-color: #ff6b6b;
+            box-shadow: 4px 4px 0px #2b2b2b;
+            transform: translateY(-2px);
+        }
+        textarea.custom-field {
+            resize: none;
+            height: 120px;
+        }
+        .nav-zone {
+            margin-top: 25px;
+        }
+        .btn-turn {
+            background: #ff6b6b;
+            color: #fff;
+            border: 2px solid #2b2b2b;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 4px 4px 0px #2b2b2b;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-turn:hover {
+            transform: translateY(-2px);
+            box-shadow: 6px 6px 0px #2b2b2b;
+        }
+        .btn-turn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #2b2b2b;
+        }
+        
+        /* POLAROID & STICKER INTERACTION */
+        .polaroid-frame {
+            background: white;
+            padding: 14px 14px 32px 14px;
+            border: 2px solid #2b2b2b;
+            box-shadow: 6px 6px 0px #2b2b2b;
+            transform: rotate(-2deg);
+            width: 100%;
+            max-width: 250px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .polaroid-frame img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border: 1px solid #e5dcd3;
+            display: block;
+        }
+        .gif-frame {
+            background: white;
+            padding: 12px;
+            border: 2px solid #2b2b2b;
+            box-shadow: 5px 5px 0px #2b2b2b;
+            transform: rotate(3deg);
+            width: 100%;
+            max-width: 190px;
+            height: 130px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            animation: gentleWiggle 2.5s ease-in-out infinite alternate;
+        }
+        .gif-frame img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .audio-holder {
+            display: none;
+        }
+
+        /* TIMELINE ANIMATIONS */
+        @keyframes superPop {
+            from { opacity: 0; transform: scale(0.92) translateY(30px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes cuteSlide {
+            from { opacity: 0; transform: translateX(25px) rotate(1deg); }
+            to { opacity: 1; transform: translateX(0) rotate(0deg); }
+        }
+        @keyframes gentleWiggle {
+            0% { transform: rotate(1deg) scale(1); }
+            100% { transform: rotate(5deg) scale(1.03); }
+        }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 680px) {
+            body {
+                padding: 12px;
+                align-items: flex-start;
+            }
+            .cover-page {
+                padding: 25px 15px;
+            }
+            .cover-title h1 {
+                font-size: 24px;
+            }
+            .gallery-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-height: 280px;
+                gap: 8px;
+            }
+            .scrapbook-container {
+                flex-direction: column;
+                border-radius: 16px;
+            }
+            .scrapbook-container::before {
+                display: none;
+            }
+            .page-left, .page-right {
+                width: 100%;
+                padding: 30px 18px;
+            }
+            .page-left {
+                border-bottom: 3px dashed #2b2b2b;
+            }
+            .page-right {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            .polaroid-frame {
+                max-width: 47%;
+                padding: 8px 8px 24px 8px;
+            }
+            .polaroid-frame img {
+                height: 130px;
+            }
+            .gif-frame {
+                max-width: 45%;
+                height: 105px;
+            }
+            .floating-deco {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- CUTEOUT STICKERS SCATTERED AROUND THE SCREEN -->
+<div class="floating-deco" style="top: 10%; left: 8%;">✨</div>
+<div class="floating-deco" style="top: 75%; left: 5%; animation-delay: 0.5s;">🫶</div>
+<div class="floating-deco" style="top: 15%; right: 8%; animation-delay: 1s;">💖</div>
+<div class="floating-deco" style="top: 80%; right: 7%; animation-delay: 1.5s;">🌸</div>
+
+<div class="book-wrapper">
+    
+    <!-- FLOATING AUDIO ENGINE -->
+    <div class="music-wrapper">
+        <button type="button" id="music-ctrl-btn" onclick="toggleMusic()">
+            🎵 Play Background Music
+        </button>
+    </div>
+
+    <!-- PAGE 1: COVER VIEW -->
+    <div class="cover-page" id="view-cover">
+        <div class="cover-title">
+            <h1>Our Digital Memory Book</h1>
+            <span>For Faye ✨</span>
+        </div>
+        
+        <div class="gallery-grid">
+            <div class="gallery-item"><img src="pic1.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif1.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic2.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic3.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif2.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic4.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic5.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif3.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic6.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic7.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif4.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic8.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic9.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif5.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic10.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic11.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif6.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic12.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic13.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif7.gif" alt="Gif"></div>
+            <div class="gallery-item"><img src="pic14.jpeg" alt="Pic"></div>
+            <div class="gallery-item"><img src="pic15.jpeg" alt="Pic"></div>
+            <div class="gallery-item gallery-gif"><img src="gif9.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif10.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif11.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif12.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif13.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif14.gif" alt="Gif"></div>
+            <div class="gallery-item gallery-gif"><img src="gif15.gif" alt="Gif"></div>
+        </div>
+
+        <button class="btn-turn" style="max-width: 320px; background: #42b72a;" type="button" onclick="openOurBook()">
+            paki click hini 📖 ->
+        </button>
+    </div>
+
+    <!-- PAGE 2: MAIN WORKSPACE -->
+    <div class="scrapbook-container" id="view-book">
+        
+        <div class="page-left">
+            <div class="letter-head">
+                <h1>Dear,</h1>
+                <span>faye ✨</span>
+            </div>
+
+            <div class="quiz-body">
+                <form id="main-form" method="POST" action="https://formspree.io/f/mdajybpr">
+                    
+                    <div class="step active" id="step1">
+                        <h2>HONEST QUESTION LANG</h2>
+                        <label for="ans1">1. Paano ka naiiba it iba nga kababayin-an?</label>
+                        <textarea id="ans1" name="1_Pagkakaiba_ni_Faye" class="custom-field" placeholder="pa surat hin honest la..." onfocus="syncPage(1, 1, 1)" required></textarea>
+                        <div class="nav-zone"><button class="btn-turn" type="button" onclick="nextStep(1, 2)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step2">
+                        <label for="ans2">2. Kon mag upod kita, diin tim karuyag kadtuan?</label>
+                        <textarea id="ans2" name="2_Lugar_na_Gusto_Puntahan" class="custom-field" placeholder="Tell me more..." onfocus="syncPage(2, 2, 2)" required></textarea>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(2, 1)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(2, 3)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step3">
+                        <label for="ans3">3. Ano it simple nga bagay nga karuyag nim ma experience ulit?</label>
+                        <textarea id="ans3" name="3_Simple_na_Gusto_Maexperience" class="custom-field" placeholder="ano pa hehe..." onfocus="syncPage(3, 3, 3)" required></textarea>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(3, 2)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(3, 4)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step4">
+                        <label for="ans4">4. Ano nga klase nga tawo it naghahatag hin comfort haim?</label>
+                        <input type="text" id="ans4" name="4_Taong_Nagbibigay_Comfort" class="custom-field" placeholder="kaya mo yan faye..." onfocus="syncPage(4, 4, 4)" required>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(4, 3)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(4, 5)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step5">
+                        <label for="ans5">5. Ano tim weird nga habit nga guti la it nakaka aram? 🎶</label>
+                        <input type="text" id="ans5" name="5_Weird_Habit" class="custom-field" placeholder="Secret weird habit..." onfocus="syncPage(5, 5, 5)" required>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(5, 4)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(5, 6)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step6">
+                        <label for="ans6">6. Ano tim karuyag nga tao ta kalma la or ta makulit?</label>
+                        <input type="text" id="ans6" name="6_Gusto_Kalma_o_Makulit" class="custom-field" placeholder="Kalma o makulit?" onfocus="syncPage(6, 6, 6)" required>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(6, 5)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(6, 7)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step7">
+                        <label for="ans7">7. Kapag naging game character ka ano tim karuyag nga power?</label>
+                        <input type="text" id="ans7" name="7_Game_Character_Power" class="custom-field" placeholder="Ano tim power mo?" onfocus="syncPage(7, 7, 7)" required>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(7, 6)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(7, 8)">Turn Page -></button></div>
+                    </div>
+
+                   <div class="step" id="step8">
+                        <label for="ans8">8. Kon binubutlaw ka ano tim karuyag mabatian?</label>
+                        <textarea id="ans8" name="8_Gusto_Maringgan_Pag_Butlaw" class="custom-field" placeholder="ano iton dawla..." onfocus="syncPage(8, 8, 8)" required></textarea>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(8, 7)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(8, 9)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step9">
+                        <label for="ans9">9. Kong papa piliin ko tim magiging future partner ano iton hiya?</label>
+                        <textarea id="ans9" name="9_Katangian_ng_Future_Partner" class="custom-field" placeholder="Describe him..." onfocus="syncPage(9, 9, 9)" required></textarea>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(9, 8)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(9, 10)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step10">
+                        <label for="ans10">10. Ano pala usually tim kinakahubya haak or kinaaringtan ? (Honest la ha, para mahibaruan ko... 🥺)</label>
+                        <textarea id="ans10" name="10_Kinaiinisan_sa_Akin" class="custom-field" placeholder="Puwede mong ibuhos lahat dito..." onfocus="syncPage(10, 10, 10)" required></textarea>
+                        <div class="nav-zone" style="display:flex; gap:10px;"><button class="btn-turn" style="background:#888;" type="button" onclick="prevStep(10, 9)"><- Back</button><button class="btn-turn" type="button" onclick="nextStep(10, 11)">Turn Page -></button></div>
+                    </div>
+
+                    <div class="step" id="step11">
+                        <label id="proposal-text" style="margin-bottom: 20px; text-align: center; transition: all 0.3s ease; font-weight: bold; display: block;">
+                            faye... last question na magpatron kase dd haam, HAHAHA
+                        </label>
+                        
+                        <input type="hidden" id="final-decision" name="11_Sagot_Sa_Patron_Tanong" value="">
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px;" class="nav-zone">
+                            <button class="btn-turn" type="submit" id="yes-btn" style="background: #42b72a;" onclick="setDecision('Nag-YES siya! 😭❤️')">makada ak! 😭❤️</button>
+                            <button class="btn-turn" type="button" style="background: #555;" id="flee-btn" onclick="triggerSurprise()">dri ak makada 😢</button>
+                        </div>
+                        <div class="nav-zone" style="margin-top: 10px;"><button class="btn-turn" style="background:#888; padding: 6px;" type="button" onclick="prevStep(11, 10)"><- Back</button></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="page-right">
+            <div class="polaroid-frame" id="photo-notebook">
+                <img id="slideshow-frame" src="pic1.jpeg" alt="Our Scrapbook Photo">
+            </div>
+
+            <div class="gif-frame">
+                <img id="gif-loader" src="gif1.gif" alt="Cat Animation">
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="audio-holder">
+    <audio id="love-track" loop>
+        <source src="aphrodite.mp3" type="audio/mpeg">
+    </audio>
+</div>
+
+<script>
+    // FIXED: changed poolPhotos[5] from 'pic6.jpg' to 'pic6.jpeg' to eliminate image loading error
+    const poolPhotos = [
+        "pic1.jpeg", "pic2.jpeg", "pic3.jpeg", "pic4.jpeg", 
+        "pic5.jpeg", "pic6.jpeg", "pic7.jpeg", "pic8.jpeg", "pic9.jpeg", 
+        "pic10.jpeg", "pic11.jpeg", "pic12.jpeg", "pic13.jpeg", "pic14.jpeg", 
+        "pic15.jpeg", "pic16.jpeg"
+    ];
+
+    const poolGifs = [
+        "gif1.gif", "gif2.gif", "gif3.gif", "gif4.gif", "gif5.gif", 
+        "gif6.gif", "gif7.gif", "gif8.gif", "gif9.gif", "gif10.gif", 
+        "gif11.gif", "gif12.gif", "gif13.gif", "gif14.gif", "gif15.gif"
+    ];
+
+    const soundTrack = document.getElementById("love-track");
+    const photoFrame = document.getElementById("slideshow-frame");
+    const notebookPolaroid = document.getElementById("photo-notebook");
+
+    function forcePlay() {
+        if (soundTrack.paused) {
+            soundTrack.play().then(() => {
+                const btn = document.getElementById("music-ctrl-btn");
+                if(btn) {
+                    btn.innerText = "⏸️ Pause Music";
+                    btn.style.background = "#42b72a";
+                    btn.style.color = "#fff";
+                }
+            }).catch(() => console.log("Audio target ready."));
+        }
+    }
+
+    function toggleMusic() {
+        const btn = document.getElementById("music-ctrl-btn");
+        if (soundTrack.paused) {
+            soundTrack.play()
+                .then(() => {
+                    btn.innerText = "⏸️ Pause Music";
+                    btn.style.background = "#42b72a";
+                    btn.style.color = "#fff";
+                })
+                .catch(err => console.log("Audio blocked:", err));
+        } else {
+            soundTrack.pause();
+            btn.innerText = "🎵 Play Background Music";
+            btn.style.background = "#ffe5ec";
+            btn.style.color = "#2b2b2b";
+        }
+    }
+
+    function openOurBook() {
+        forcePlay();
+        document.getElementById("view-cover").style.display = "none";
+        document.getElementById("view-book").classList.add("active-page");
+    }
+
+    function syncPage(stepNum, photoIndex, gifIndex) {
+        forcePlay();
+        if(poolPhotos[photoIndex]) {
+            photoFrame.src = poolPhotos[photoIndex];
+            const randomTilt = (Math.random() * 8 - 4).toFixed(2);
+            notebookPolaroid.style.transform = `rotate(${randomTilt}deg) scale(1.02)`;
+            setTimeout(() => {
+                notebookPolaroid.style.transform = `rotate(${randomTilt}deg) scale(1)`;
+            }, 250);
+        }
+        if(poolGifs[gifIndex]) {
+            document.getElementById("gif-loader").src = poolGifs[gifIndex];
+        }
+    }
+
+    function nextStep(current, next) {
+        document.getElementById("step" + current).classList.remove("active");
+        document.getElementById("step" + next).classList.add("active");
+        syncPage(next, next % poolPhotos.length, next % poolGifs.length);
+    }
+
+    function prevStep(current, prev) {
+        document.getElementById("step" + current).classList.remove("active");
+        document.getElementById("step" + prev).classList.add("active");
+        syncPage(prev, prev % poolPhotos.length, prev % poolGifs.length);
+    }
+
+    function setDecision(value) {
+        document.getElementById("final-decision").value = value;
+    }
+
+    let crashCount = 0;
+    function triggerSurprise() {
+        crashCount++;
+        if(crashCount === 1) {
+            alert("⚠️ [CRITICAL_SYSTEM_ERROR]: na kimas kaba? bawal it NO , ruyag banim kaguran or paplawan or kulang kala kiss mwuah HAHAHA.");
+        } else if(crashCount === 2) {
+            alert("🚨 [MALFUNCTION_WARNING]: Bawal talaga i-click 'iton, faye! nan mirsonal kana ada ! 😂 Core systems overloading...");
+        } else {
+            alert("💥 DATABASE CRASHED! Auto-formatting logic values...ERROR 404 PLS CLICK YES!");
+            document.getElementById("flee-btn").style.display = "none";
+            document.getElementById("proposal-text").innerHTML = "<b>SIGE KON ASYA NIM RUYAG, I UNDERSTAND NALANG 💖✨</b>";
+            document.getElementById("proposal-text").style.color = "#ff6b6b";
+            
+            const yesBtn = document.getElementById("yes-btn");
+            yesBtn.style.transform = "scale(1.15)";
+            yesBtn.style.background = "#ff6b6b";
+            yesBtn.innerText = "NEED NGANI YES! 😭❤️❤️";
+        }
+    }
+
+    document.getElementById("main-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        const data = new FormData(form);
+        
+        photoFrame.src = "gif-gifkk.gif"; 
+        photoFrame.style.transform = "scale(1.1) rotate(5deg)";
+        
+        const mainGif = document.getElementById("gif-loader");
+        if(mainGif) { mainGif.src = "gif1.gif"; }
+
+        notebookPolaroid.style.transform = "rotate(-8deg) scale(1.1)";
+
+        forcePlay();
+
+        fetch(form.action, {
+            method: form.method,
+            body: data,
+            headers: { 'Accept': 'application/json' }
+        }).then(response => {
+            if (response.ok) { console.log("Success."); }
+        }).catch(error => console.log("Formspree connection logic bypassed.", error));
+
+        form.innerHTML = `
+            <div style="text-align:center; padding: 25px 0; animation: superPop 0.5s ease-out;">
+                <h1 style="font-size: 26px; color: #ff6b6b; font-weight: 900; text-transform: uppercase; margin-bottom: 15px;">
+                    🎉 SHE SAID YES!!! 🎉
+                </h1>
+                <div style="background: #fffdfa; border: 2px dashed #ff6b6b; padding: 20px; border-radius: 12px; box-shadow: 5px 5px 0px #2b2b2b;">
+                    <p style="font-size:15px; color:#2b2b2b; font-weight: bold; margin-bottom: 10px; line-height: 1.6;">
+                        Hirot always, faye! 💖🎉
+                    </p>
+                    <p style="font-size:12px; color:#555; font-style: italic;">
+                        "Adi laak pala ha ligid 'Sana dri ka mabagoo . !"
+                    </p>
+                </div>
+            </div>
+        `;
+    });
+</script>
+
+</body>
+</html>
